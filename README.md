@@ -60,6 +60,16 @@ Jika mengalami masalah:
 2. Periksa koneksi internet Anda
 3. Pastikan URL yang dimasukkan valid dan dapat diakses
 
+## Untuk Menjalankan UI CAM (Semua di sesi `terminial` terpisah)
+1. Jalankan script server dengan perintah:
+```bash
+python server.py
+```
+2. Jalankan script Read NFC dengan perintah:
+```bash
+python read_nfc.py
+```
+
 ## Kontribusi
 
 Silakan buat pull request jika ingin berkontribusi pada project ini.
