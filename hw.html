@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CAM 2: Parking Lot</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Courier New', Courier, monospace;
+      background: #111;
+      color: #0f0;
+      overflow: hidden;
+    }
+
+    .overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.7);
+      mix-blend-mode: lighten;
+      z-index: 2;
+    }
+
+    .cctv-label {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 2.4em;
+      background: rgba(0,0,0,0.5);
+      padding: 5px 10px;
+      border: 1px solid #0f0;
+      z-index: 3;
+    }
+
+    .timestamp {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 2em;
+      color: #0f0;
+      z-index: 3;
+    }
+
+    .info-box {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: rgba(0,0,0,0.6);
+      padding: 10px;
+      border: 1px solid #0f0;
+      max-width: 600px;
+      z-index: 3;
+      font-size: 2em;
+    }
+
+    .info-box h2 {
+      margin: 0 0 10px 0;
+      color: #0f0;
+      font-size: 1.2em;
+    }
+
+    .slideshow-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 37.5%;  /* 75% * 0.5 = 37.5% */
+      height: 37.5%; /* 75% * 0.5 = 37.5% */
+      z-index: 1;
+    }
+
+    .slide {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      transition: opacity 1s ease-in-out;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: visible;
+    }
+
+    .slide.active {
+      opacity: 1;
+    }
+
+    .slide img {
+      min-width: 62.5%;  /* 125% * 0.5 = 62.5% */
+      min-height: 62.5%; /* 125% * 0.5 = 62.5% */
+      max-width: 62.5%;  /* 125% * 0.5 = 62.5% */
+      max-height: 62.5%; /* 125% * 0.5 = 62.5% */
+      object-fit: contain;
+      filter: grayscale(100%) brightness(0.7) contrast(1.2);
+      transform-origin: center center;
+    }
+
+    .slide-controls {
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 30px;
+      z-index: 3;
+    }
+
+    .slide-button {
+      background: none;
+      border: 1px solid #0f0;
+      color: #0f0;
+      padding: 15px 40px;
+      min-width: 200px;
+      cursor: pointer;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 2em;
+      transition: all 0.3s ease;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .slide-button:hover {
+      background: #0f0;
+      color: #111;
+    }
+
+    .slide-indicator {
+      position: absolute;
+      bottom: 120px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #0f0;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 2em;
+      z-index: 3;
+      white-space: nowrap;
+    }
+
+    .spinner-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      z-index: 1000;
+    }
+
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 3px solid #0f0;
+      border-top: 3px solid transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    .spinner-text {
+      color: #0f0;
+      margin-top: 20px;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 2em;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="spinner-overlay" id="spinnerOverlay">
+    <div class="spinner"></div>
+    <div class="spinner-text">Downloading images...</div>
+  </div>
+
+  <div class="overlay"></div>
+  <div class="cctv-label">CAM 2: Parking Lot</div>
+  <div class="timestamp" id="time"></div>
+
+  <div class="slideshow-container" id="slideshowContainer">
+    <!-- Slides will be added here dynamically -->
+  </div>
+
+  <div class="slide-indicator" id="slideIndicator">Image 1 of 1</div>
+  <div class="slide-controls">
+    <button class="slide-button" id="prevButton">◀ Prev</button>
+    <button class="slide-button" id="nextButton">Next ▶</button>
+  </div>
+
+  <div class="info-box" id="carInfo">
+    <h2>Now Parking...</h2>
+    <div><strong>Collection #:</strong> <span id="collection">Waiting...</span></div>
+    <div><strong>Series:</strong> <span id="series">Waiting...</span></div>
+    <div><strong>Color:</strong> <span id="color">Waiting...</span></div>
+    <div><strong>Velg:</strong> <span id="tampo">Waiting...</span></div>
+    <div><strong>Base:</strong> <span id="base">Waiting...</span></div>
+    <div><strong>Windows:</strong> <span id="windows">Waiting...</span></div>
+    <div><strong>Interior:</strong> <span id="interior">Waiting...</span></div>
+    <div><strong>Wheels:</strong> <span id="wheels">Waiting...</span></div>
+    <div><strong>Toy #:</strong> <span id="toynum">Waiting...</span></div>
+    <div><strong>Country:</strong> <span id="country">Waiting...</span></div>
+    <div><strong>Notes:</strong> <span id="notes">Waiting...</span></div>
+  </div>
+
+  <script>
+    let currentSlide = 0;
+    let autoSlideInterval;
+    const SLIDE_INTERVAL = 3000; // 3 detik per slide
+
+    function updateTime() {
+      const now = new Date();
+      const timeString = now.toLocaleTimeString();
+      document.getElementById('time').textContent = timeString;
+    }
+    setInterval(updateTime, 1000);
+    updateTime();
+
+    function showSpinner() {
+      document.getElementById('spinnerOverlay').style.display = 'flex';
+    }
+
+    function hideSpinner() {
+      document.getElementById('spinnerOverlay').style.display = 'none';
+    }
+
+    function showSlide(index) {
+      const slides = document.querySelectorAll('.slide');
+      if (slides.length === 0) return;
+
+      currentSlide = (index + slides.length) % slides.length;
+      
+      slides.forEach(slide => slide.classList.remove('active'));
+      slides[currentSlide].classList.add('active');
+      
+      document.getElementById('slideIndicator').textContent = 
+        `Image ${currentSlide + 1} of ${slides.length}`;
+    }
+
+    function nextSlide() {
+      showSlide(currentSlide + 1);
+    }
+
+    function prevSlide() {
+      showSlide(currentSlide - 1);
+    }
+
+    function startAutoSlide() {
+      stopAutoSlide();
+      autoSlideInterval = setInterval(nextSlide, SLIDE_INTERVAL);
+    }
+
+    function stopAutoSlide() {
+      if (autoSlideInterval) {
+        clearInterval(autoSlideInterval);
+      }
+    }
+
+    document.getElementById('nextButton').addEventListener('click', () => {
+      stopAutoSlide();
+      nextSlide();
+      startAutoSlide();
+    });
+
+    document.getElementById('prevButton').addEventListener('click', () => {
+      stopAutoSlide();
+      prevSlide();
+      startAutoSlide();
+    });
+
+    function displayCar(data) {
+      document.getElementById('collection').textContent = data["Col #"] || "Unknown";
+      document.getElementById('series').textContent = data["Series"] || "Unknown";
+      document.getElementById('color').textContent = data["Color"] || "Unknown";
+      document.getElementById('tampo').textContent = data["Tampo"] || "Unknown";
+      document.getElementById('base').textContent = data["Base Color/Type"] || "Unknown";
+      document.getElementById('windows').textContent = data["Window Color"] || "Unknown";
+      document.getElementById('interior').textContent = data["Interior Color"] || "Unknown";
+      document.getElementById('wheels').textContent = data["Wheel Type"] || "Unknown";
+      document.getElementById('toynum').textContent = data["Toy #"] || "Unknown";
+      document.getElementById('country').textContent = data["Country"] || "Unknown";
+      document.getElementById('notes').textContent = data["Notes"] || "Unknown";
+      
+      const container = document.getElementById('slideshowContainer');
+      container.innerHTML = '';
+      
+      if (data.downloaded_images && data.downloaded_images.length > 0) {
+        hideSpinner();
+        data.downloaded_images.forEach((imgName, index) => {
+          const slide = document.createElement('div');
+          slide.className = 'slide' + (index === 0 ? ' active' : '');
+          
+          const img = document.createElement('img');
+          img.src = 'http://localhost:8000/downloaded_images/' + imgName;
+          img.alt = `Car - View ${index + 1}`;
+          
+          img.onerror = () => {
+            img.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="%23111"/><text x="50%" y="50%" fill="%230f0" text-anchor="middle">Image Error</text></svg>';
+          };
+          
+          slide.appendChild(img);
+          container.appendChild(slide);
+        });
+        
+        currentSlide = 0;
+        showSlide(0);
+        startAutoSlide();
+      }
+    }
+
+    function resetDisplay() {
+      document.getElementById('collection').textContent = "Waiting...";
+      document.getElementById('series').textContent = "Waiting...";
+      document.getElementById('color').textContent = "Waiting...";
+      document.getElementById('tampo').textContent = "Waiting...";
+      document.getElementById('base').textContent = "Waiting...";
+      document.getElementById('windows').textContent = "Waiting...";
+      document.getElementById('interior').textContent = "Waiting...";
+      document.getElementById('wheels').textContent = "Waiting...";
+      document.getElementById('toynum').textContent = "Waiting...";
+      document.getElementById('country').textContent = "Waiting...";
+      document.getElementById('notes').textContent = "Waiting...";
+      
+      const container = document.getElementById('slideshowContainer');
+      container.innerHTML = '';
+      document.getElementById('slideIndicator').textContent = 'Image 1 of 1';
+      
+      stopAutoSlide();
+      
+      document.querySelector('.info-box h2').textContent = "Now Parking...";
+    }
+
+    function connectWebSocket() {
+      const ws = new WebSocket('ws://localhost:8765');
+      
+      ws.onopen = function() {
+        console.log('Connected to WebSocket server');
+      };
+      
+      ws.onmessage = function(event) {
+        console.log('Received data:', event.data);
+        try {
+          const data = JSON.parse(event.data);
+          
+          if (data.tag_removed) {
+            hideSpinner();
+            resetDisplay();
+          } else {
+            document.querySelector('.info-box h2').textContent = "Car Detected!";
+            
+            if (data.downloading) {
+              showSpinner();
+              document.querySelector('.spinner-text').textContent = "Downloading images...";
+              if (data["Col #"]) document.getElementById('collection').textContent = data["Col #"];
+              if (data["Series"]) document.getElementById('series').textContent = data["Series"];
+              if (data["Toy #"]) document.getElementById('toynum').textContent = data["Toy #"];
+            } else if (data.downloaded_images) {
+              displayCar(data);
+            }
+          }
+        } catch (e) {
+          console.error('Error parsing data:', e);
+          hideSpinner();
+        }
+      };
+      
+      ws.onerror = function(error) {
+        console.error('WebSocket Error:', error);
+        hideSpinner();
+      };
+      
+      ws.onclose = function() {
+        console.log('WebSocket connection closed. Reconnecting...');
+        setTimeout(connectWebSocket, 1000);
+      };
+    }
+
+    connectWebSocket();
+    resetDisplay();
+  </script>
+</body>
+</html>
