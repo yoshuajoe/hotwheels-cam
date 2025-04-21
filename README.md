@@ -1,6 +1,9 @@
 # Hot Wheels Data Scraper
 
 Aplikasi ini digunakan untuk mengambil data Hot Wheels dari website Fandom Hot Wheels.
+Silakan kunjungi YouTube https://youtu.be/R6HiF4f-dCA untuk melihat demo.
+
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/R6HiF4f-dCA/0.jpg)]([https://www.youtube.com/watch?v=YOUTUBE_VIDEO_ID_HERE](https://youtu.be/R6HiF4f-dCA))
 
 ## Persyaratan
 - Python 3.7 atau lebih tinggi
