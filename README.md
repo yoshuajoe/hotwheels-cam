@@ -60,7 +60,7 @@ Jika mengalami masalah:
 2. Periksa koneksi internet Anda
 3. Pastikan URL yang dimasukkan valid dan dapat diakses
 
-## Untuk Menjalankan UI CAM (Semua di sesi `terminial` terpisah)
+## Untuk Menjalankan UI CAM (Semua di sesi `terminal` terpisah)
 1. Jalankan script server dengan perintah:
 ```bash
 python server.py
